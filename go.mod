@@ -1,4 +1,4 @@
-module wasatext
+module bubbleLink
 
 go 1.17
 
