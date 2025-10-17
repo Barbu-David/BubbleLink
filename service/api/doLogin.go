@@ -6,7 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"math/big"
 	"net/http"
-	"wasatext/service/api/reqcontext"
+	"bubbleLink/service/api/reqcontext"
 )
 
 //generate the auth token

@@ -5,7 +5,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"wasatext/service/api/reqcontext"
+	"bubbleLink/service/api/reqcontext"
 )
 
 // httpRouterHandler is the signature for functions that accepts a reqcontext.RequestContext in addition to those

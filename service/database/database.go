@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"image/jpeg"
-	"time"
+//	"image/jpeg"
+//	"time"
 )
 
 type AppDatabase interface {
@@ -13,7 +13,7 @@ type AppDatabase interface {
 
 	CheckIfUserExists(username string) (bool, error)
 
-	AddNewUser(username string, securityKey string) (int, error)
+	AddNewUser(username string, country string, city string, securityKey string) (int, error)
 
 	//	GetUserName(userID int) (string, error)
 	//	SetUserName(userID int, username string) error

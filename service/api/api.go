@@ -14,7 +14,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"wasatext/service/database"
+	"bubbleLink/service/database"
 )
 
 // Config is used to provide dependencies and configuration to the New function.
