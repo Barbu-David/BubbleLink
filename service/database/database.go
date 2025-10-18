@@ -15,8 +15,8 @@ type AppDatabase interface {
 
 	AddNewUser(username string, country string, city string, securityKey string) (int, error)
 
-	//	GetUserName(userID int) (string, error)
-	//	SetUserName(userID int, username string) error
+	GetUserName(userID int) (string, error)
+	SetUserName(userID int, username string) error
 
 	//	GetUserPhoto(userID int) (*gif.GIF, error)
 	//	SetUserPhoto(userID int, photo *gif.GIF) error

@@ -27,11 +27,6 @@ func encodeJPEG(img image.Image, quality int) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func decodeJPEG(data []byte) (image.Image, error) {
-	r := bytes.NewReader(data)
-	return jpeg.Decode(r)
-}
-
 func (db *appdbimpl) AddNewUser(username string, country string, city string, securityKey string) (int, error) {
 
 	//defaultPhoto := createDefaultGIF()
