@@ -33,10 +33,10 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	//analyze the request body
 	var requestBody struct {
 		Name struct { // name has some special conditions in the front end, so we put it inside a struct
-			FormatedName string `json:"name"`
+			FormatedName string `json:"FormatedName"`
 		}
-		Country string `json:"country"`
-		City    string `json:"city"`
+		Country string `json:"Country"`
+		City    string `json:"City"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
