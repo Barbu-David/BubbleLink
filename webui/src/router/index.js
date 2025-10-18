@@ -3,7 +3,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const Login = () => import('@/views/Login.vue')
 const MapView = () => import('@/views/MapView.vue')
-const MyProfile = () => import('@/views/MyProfile.vue') // ✅ add this
+const MyProfile = () => import('@/views/MyProfile.vue')
+
+// NEW: lazy QR views
+const QrCreate = () => import('@/views/QrCreate.vue')
+const QrScan = () => import('@/views/QrScan.vue')
 
 const router = createRouter({
 	history: createWebHistory(),
@@ -11,7 +15,11 @@ const router = createRouter({
 		{ path: '/', redirect: '/map' },
 		{ path: '/login', name: 'login', component: Login, meta: { guestOnly: true } },
 		{ path: '/map', name: 'map', component: MapView, meta: { requiresAuth: true } },
-		{ path: '/me', name: 'profile', component: MyProfile, meta: { requiresAuth: true } }, // ✅ add this
+		{ path: '/me', name: 'profile', component: MyProfile, meta: { requiresAuth: true } },
+
+		{ path: '/qr/create/', name: 'qr-create', component: QrCreate, meta: { requiresAuth: true } },
+		{ path: '/qr/scan', name: 'qr-scan', component: QrScan, meta: { requiresAuth: true } },
+
 		{ path: '/:pathMatch(.*)*', redirect: '/map' }
 	]
 })

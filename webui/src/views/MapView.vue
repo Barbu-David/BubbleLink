@@ -61,6 +61,11 @@
         <button title="Geolocate" @click="locate">📍</button>
         <button title="Reset view" @click="resetView">⤾</button>
       </div>
+
+      <section class="qr-tests">
+        <button class="wide" @click="$router.push({ name: 'qr-create' })">Create QR (latest place)</button>
+        <button class="wide ghost" @click="$router.push({ name: 'qr-scan' })">Scan QR</button>
+      </section>
     </aside>
   </div>
 </template>
@@ -355,17 +360,19 @@ onBeforeUnmount(() => {
 .layout {
   display: grid;
   grid-template-columns: 1fr 360px;
-  height: calc(100vh - 56px);
+  height: calc(100vh - 56px); /* header ≈ 56px */
   position: relative;
+  overflow: hidden;
 }
 
 /* Map fills left column */
 #map {
   position: relative;
   border-top: 1px solid rgba(255,255,255,0.05);
+  min-width: 0; /* prevent overflow when sidebar scrolls */
 }
 
-/* Sidebar always visible */
+/* Sidebar */
 .panel {
   position: relative;
   z-index: 2000;
@@ -374,30 +381,64 @@ onBeforeUnmount(() => {
   padding: 14px;
   color: #e9ecf1;
   overflow: auto;
+  display: grid;
+  grid-auto-rows: max-content;
+  gap: 12px;
 }
-.panel header { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; margin-bottom: 8px; }
+
+.panel header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  position: sticky; top: 0; z-index: 1;
+  background: rgba(10,12,20,.95);
+  padding-bottom: 8px; margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
 .small { font-size: 12px; }
-.card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); padding: 10px; border-radius: 10px; }
+
+.card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  padding: 10px;
+  border-radius: 10px;
+}
 
 .row { display: grid; gap: 8px; margin: 10px 0; }
 input, textarea {
-  width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
-  background: rgba(255,255,255,.06); color: #fff;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: #fff;
 }
+textarea { resize: vertical; min-height: 88px; }
+
 .meta { display: flex; gap: 12px; font-size: 12px; opacity: .7; margin-bottom: 10px; }
 .cta {
-  width: 100%; display: grid; place-items: center;
+  width: 100%;
+  display: grid; place-items: center;
   background: linear-gradient(135deg, #ffd36a, #ff8e6e);
   color: #0c0f1a; font-weight: 800; border: 0; border-radius: 12px; padding: 12px; cursor: pointer;
 }
-hr { border: 0; height: 1px; background: rgba(255,255,255,.08); margin: 14px 0; }
 
-/* List */
+/* Dividers with consistent spacing */
+hr {
+  border: 0; height: 1px;
+  background: rgba(255,255,255,.08);
+  margin: 6px 0;
+}
+
+/* List of places */
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .list li {
-  display: grid; grid-template-columns: 12px 1fr; gap: 10px; align-items: center;
-  padding: 8px; border-radius: 10px; cursor: pointer; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px; align-items: center;
+  padding: 8px; border-radius: 10px; cursor: pointer;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
 }
+.list li:hover { background: rgba(255,255,255,.06); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #8bd0ff; }
 .txt .t { font-weight: 700; }
 .txt .s { font-size: 12px; opacity: .65; }
@@ -407,18 +448,47 @@ hr { border: 0; height: 1px; background: rgba(255,255,255,.08); margin: 14px 0; 
 .toolbar {
   position: sticky;
   bottom: 0;
-  display: flex; gap: 8px; justify-content: space-between; padding-top: 10px;
+  display: flex; gap: 8px; justify-content: space-between;
+  padding-top: 10px; margin-top: 4px;
+  background: linear-gradient(180deg, transparent, rgba(10,12,20,.85));
 }
 .toolbar button {
   flex: 1;
-  height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
+  height: 40px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.15);
   background: rgba(0,0,0,.35); color: #fff; font-size: 18px; cursor: pointer;
   box-shadow: 0 6px 24px rgba(0,0,0,.25);
+}
+
+/* QR test buttons (stacked) */
+.qr-tests { display: grid; gap: 8px; }
+.wide {
+  width: 100%; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.15);
+  background: linear-gradient(135deg, #7aaaff, #8bd0ff); color: #0c0f1a; font-weight: 800;
+}
+.wide.ghost {
+  background: transparent; color: #cfe6ff;
+  border: 1px solid rgba(255,255,255,.2);
+}
+
+/* Responsive: shrink sidebar / stack on narrow screens */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr 320px; }
+}
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr max-content;
+    height: calc(100vh - 56px);
+  }
+  #map { height: 60vh; }
+  .panel { height: 40vh; }
 }
 </style>
 
 <style>
-/* Global (unscoped) — applies to Leaflet’s injected HTML */
+/* Global (unscoped) — Leaflet pins only, namespaced to avoid conflicts elsewhere */
 
 /* Red pin for saved places */
 .pin-red { position: relative; }
@@ -433,7 +503,7 @@ hr { border: 0; height: 1px; background: rgba(255,255,255,.08); margin: 14px 0; 
   position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%);
 }
 
-/* Home pin (gold) for user base */
+/* Home pin (gold) */
 .pin-home { position: relative; }
 .pin-home .pin-head {
   width: 16px; height: 16px; border-radius: 50%;
@@ -446,3 +516,5 @@ hr { border: 0; height: 1px; background: rgba(255,255,255,.08); margin: 14px 0; 
   position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
 }
 </style>
+
+
