@@ -1,5 +1,5 @@
 # Use latest Node LTS to build
-FROM node:lts as builder
+FROM node:lts AS builder
 
 # Copy Vue.js code
 WORKDIR /app
@@ -7,10 +7,14 @@ COPY webui webui
 
 ### Build Vue.js into plain HTML/CSS/JS
 WORKDIR /app/webui
-RUN yarn run build-prod
+
+# Install leaflet in the builder image so Vite can resolve it during the build,
+# then run the production build (single layer).
+RUN yarn add leaflet && yarn run build-prod
 
 ### Create final container
 FROM nginx:stable
 
 ### Copy the (built) app from the builder image
 COPY --from=builder /app/webui/dist /usr/share/nginx/html
+
