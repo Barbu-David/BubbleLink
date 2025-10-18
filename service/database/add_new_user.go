@@ -1,11 +1,11 @@
 package database
 
 import (
-	"bytes"
-	"image"
-	"image/jpeg"
-	"os"
+	//"bytes"
+	//	"image"
+	//	"image/jpeg"
 	"fmt"
+	"os"
 )
 
 /*
@@ -20,7 +20,7 @@ func createDefaultJPEG(width, height int) *image.RGBA {
 	return img
 }
 */
-
+/*
 func encodeJPEG(img image.Image, quality int) ([]byte, error) {
 	var buf bytes.Buffer
 	opts := &jpeg.Options{Quality: quality}
@@ -29,7 +29,7 @@ func encodeJPEG(img image.Image, quality int) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-
+*/
 func (db *appdbimpl) AddNewUser(username string, country string, city string, securityKey string) (int, error) {
 
 	//defaultPhoto := createDefaultGIF()
@@ -46,7 +46,7 @@ func (db *appdbimpl) AddNewUser(username string, country string, city string, se
 	if err != nil {
 		return 0, fmt.Errorf("failed to read default profile picture %q: %w", defaultPath, err)
 	}
-	
+
 	res, err := db.c.Exec(`
 		INSERT INTO Users (username, country, city, security_key, jpeg_photo) 
 		VALUES (?, ?, ?, ?, ?)`, username, country, city, securityKey, jpgBytes)
