@@ -3,10 +3,12 @@ package database
 import (
 	"bytes"
 	"image"
-	"image/color"
 	"image/jpeg"
+	"os"
+	"fmt"
 )
 
+/*
 func createDefaultJPEG(width, height int) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	blue := color.RGBA{R: 0, G: 0, B: 255, A: 255}
@@ -17,6 +19,7 @@ func createDefaultJPEG(width, height int) *image.RGBA {
 	}
 	return img
 }
+*/
 
 func encodeJPEG(img image.Image, quality int) ([]byte, error) {
 	var buf bytes.Buffer
@@ -25,11 +28,6 @@ func encodeJPEG(img image.Image, quality int) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
-}
-
-func decodeJPEG(data []byte) (image.Image, error) {
-	r := bytes.NewReader(data)
-	return jpeg.Decode(r)
 }
 
 func (db *appdbimpl) AddNewUser(username string, country string, city string, securityKey string) (int, error) {
@@ -41,12 +39,14 @@ func (db *appdbimpl) AddNewUser(username string, country string, city string, se
 		return 0, err
 		}
 	*/
-	defaultImg := createDefaultJPEG(100, 100)
+	//defaultImg := createDefaultJPEG(100, 100)
+	const defaultPath = "defaultpfp.jpg"
 
-	jpgBytes, err := encodeJPEG(defaultImg, 85) // quality=85
+	jpgBytes, err := os.ReadFile(defaultPath)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to read default profile picture %q: %w", defaultPath, err)
 	}
+	
 	res, err := db.c.Exec(`
 		INSERT INTO Users (username, country, city, security_key, jpeg_photo) 
 		VALUES (?, ?, ?, ?, ?)`, username, country, city, securityKey, jpgBytes)
