@@ -1,13 +1,5 @@
 package database
 
-import (
-	//"bytes"
-	//	"image"
-	//	"image/jpeg"
-	"fmt"
-	"os"
-)
-
 /*
 func createDefaultJPEG(width, height int) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -40,16 +32,18 @@ func (db *appdbimpl) AddNewUser(username string, country string, city string, se
 		}
 	*/
 	//defaultImg := createDefaultJPEG(100, 100)
-	const defaultPath = "defaultpfp.jpg"
+	//const defaultPath = "defaultpfp.jpg"
 
-	jpgBytes, err := os.ReadFile(defaultPath)
-	if err != nil {
-		return 0, fmt.Errorf("failed to read default profile picture %q: %w", defaultPath, err)
-	}
+	/*
+		jpgBytes, err := os.ReadFile(defaultPath)
+		if err != nil {
+			return 0, fmt.Errorf("failed to read default profile picture %q: %w", defaultPath, err)
+		}
+	*/
 
 	res, err := db.c.Exec(`
 		INSERT INTO Users (username, country, city, security_key, jpeg_photo) 
-		VALUES (?, ?, ?, ?, ?)`, username, country, city, securityKey, jpgBytes)
+		VALUES (?, ?, ?, ?, ?)`, username, country, city, securityKey, nil)
 	if err != nil {
 		return 0, err
 	}
