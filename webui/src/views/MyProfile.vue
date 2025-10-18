@@ -73,8 +73,9 @@ async function save() {
   try {
     // backend expects { Name: { name: "..." } }
     await axios.put(`/users/${user.value.userId}/name`, {
-      Name: { name: name.value }
-    });
+        name: name.value
+    })
+
 
     // update local user so header shows the change
     setUser({ ...user.value, name: name.value });
