@@ -1,11 +1,21 @@
 <!-- src/views/MapView.vue -->
 <template>
-  <div class="layout">
+  <div :class="['layout', { 'panel-closed': !panelOpen }]">
     <!-- Map -->
-    <div id="map" ref="mapEl"></div>
+    <div id="map" ref="mapEl">
+      <!-- Panel toggle (floats over map) -->
+      <button
+        class="panel-toggle"
+        :aria-expanded="panelOpen ? 'true' : 'false'"
+        :title="panelOpen ? 'Hide sidebar' : 'Show sidebar'"
+        @click="togglePanel"
+      >
+        {{ panelOpen ? '⇤' : '⇥' }}
+      </button>
+    </div>
 
-    <!-- Permanent sidebar -->
-    <aside class="panel">
+    <!-- Sidebar (collapsible) -->
+    <aside class="panel" :class="{ collapsed: !panelOpen }">
       <header>
         <h2>Places</h2>
         <div class="muted small">
@@ -71,10 +81,10 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed, nextTick, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useAuth } from '@/composables/useAuth' // ⬅️ use same composable as App.vue
+import { useAuth } from '@/composables/useAuth' // uses same composable as App.vue
 
 // Fix Leaflet default png icons (only for the temporary draggable draft marker)
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
@@ -91,6 +101,22 @@ let centerMarker = null
 let markersLayer        // LayerGroup for saved places
 let homeLayer           // LayerGroup for "home" pin (kept separate so we don't clear it)
 const userHomeCoords = ref(null) // [lat, lon] once geocoded, for instant reset
+
+// NEW: sidebar open/close
+const panelOpen = ref(true)
+function togglePanel() { panelOpen.value = !panelOpen.value }
+
+// After the slide transition, invalidate map size to avoid tile gaps.
+// 260ms matches CSS transition (250ms) + a tiny buffer.
+watch(panelOpen, async () => {
+  await nextTick()
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize()
+      updateViewState()
+    }
+  }, 260)
+})
 
 const draft = ref(null)
 const allPlaces = ref([])          // all saved places (local)
@@ -353,6 +379,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (map) map.remove()
 })
+
+// Expose constants to template
+defineExpose({ ZOOM_MIN })
 </script>
 
 <style scoped>
@@ -363,6 +392,10 @@ onBeforeUnmount(() => {
   height: calc(100vh - 56px); /* header ≈ 56px */
   position: relative;
   overflow: hidden;
+  transition: grid-template-columns .25s ease;
+}
+.layout.panel-closed {
+  grid-template-columns: 1fr 0px;
 }
 
 /* Map fills left column */
@@ -384,8 +417,17 @@ onBeforeUnmount(() => {
   display: grid;
   grid-auto-rows: max-content;
   gap: 12px;
+  transform: translateX(0%);
+  transition: transform .25s ease, opacity .25s ease;
+  opacity: 1;
+}
+.panel.collapsed {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
+/* Sticky header inside panel */
 .panel header {
   display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
   position: sticky; top: 0; z-index: 1;
@@ -395,13 +437,29 @@ onBeforeUnmount(() => {
 }
 .small { font-size: 12px; }
 
+/* Panel toggle button (floats on map) */
+.panel-toggle {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 3000; /* above Leaflet */
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(10,12,20,.85);
+  color: #e9ecf1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  font-weight: 800;
+}
+
+/* Cards/inputs */
 .card {
   background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.08);
   padding: 10px;
   border-radius: 10px;
 }
-
 .row { display: grid; gap: 8px; margin: 10px 0; }
 input, textarea {
   width: 100%;
@@ -472,7 +530,7 @@ hr {
   border: 1px solid rgba(255,255,255,.2);
 }
 
-/* Responsive: shrink sidebar / stack on narrow screens */
+/* Responsive: stack on narrow screens; collapse by height */
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr 320px; }
 }
@@ -481,9 +539,14 @@ hr {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr max-content;
     height: calc(100vh - 56px);
+    transition: grid-template-rows .25s ease;
+  }
+  .layout.panel-closed {
+    grid-template-rows: 1fr 0px;
   }
   #map { height: 60vh; }
-  .panel { height: 40vh; }
+  .panel { height: 40vh; transform: translateY(0%); }
+  .panel.collapsed { transform: translateY(100%); }
 }
 </style>
 
@@ -516,5 +579,3 @@ hr {
   position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
 }
 </style>
-
-
