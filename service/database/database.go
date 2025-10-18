@@ -48,6 +48,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, fmt.Errorf("error creating Users table: %w", err)
 	}
 
+	/*
 	bubblesTable :=`CREATE TABLE IF NOT EXISTS Bubbles (
  	  id INTEGER NOT NULL PRIMARY KEY,
     qr_code TEXT NOT NULL UNIQUE, -- what the QR resolves to; keep unique
@@ -55,7 +56,7 @@ func New(db *sql.DB) (AppDatabase, error) {
     jpeg_photo BLOB,               -- stored JPEG bytes (nullable)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`
-
+*/
 
 	return &appdbimpl{
 		c: db,
