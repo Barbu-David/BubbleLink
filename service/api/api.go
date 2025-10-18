@@ -10,11 +10,11 @@ See the `main.go` file inside the `cmd/webapi` for a full usage example.
 package api
 
 import (
+	"bubbleLink/service/database"
 	"errors"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"bubbleLink/service/database"
 )
 
 // Config is used to provide dependencies and configuration to the New function.

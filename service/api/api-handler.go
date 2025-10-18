@@ -15,6 +15,8 @@ func (rt *_router) Handler() http.Handler {
 
 	//rt.router.GET("/users/:id/existence", rt.wrap(rt.getUserExistence))
 
+	rt.router.GET("/users/:id/existence", rt.wrap(rt.getUserExistence))
+
 	rt.router.GET("/liveness", rt.liveness)
 
 	return rt.router
