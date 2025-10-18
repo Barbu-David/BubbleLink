@@ -46,17 +46,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
-  /users/{id}/existence:
+  /users/{username}/existence:
     parameters:
-     - name: id
+     - name: username
        in: path
        required: true  
        description: The unique identifier for a user.
        schema:
-        $ref: '#/components/schemas/UserId'
+        $ref: '#/components/schemas/UserName'
     get:
       tags: ["user info"]
-      summary: Get a use
+      summary: Get a user's existence
       description: Check if a user exists
       operationId: getExistence
       security:
