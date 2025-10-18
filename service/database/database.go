@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-//	"image/jpeg"
-//	"time"
+	// "image/jpeg"
+	// "time"
 )
 
 type AppDatabase interface {
