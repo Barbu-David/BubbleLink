@@ -1,12 +1,13 @@
 package api
 
 import (
+	"bubbleLink/service/api/reqcontext"
 	"crypto/rand"
 	"encoding/json"
-	"github.com/julienschmidt/httprouter"
 	"math/big"
 	"net/http"
-	"bubbleLink/service/api/reqcontext"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 //generate the auth token
@@ -34,14 +35,14 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		Name struct { // name has some special conditions in the front end, so we put it inside a struct
 			FormatedName string `json:"name"`
 		}
-		Country string `json:"city"`
-		City    string `json:"country"`
+		Country string `json:"country"`
+		City    string `json:"city"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
-
 		return
 	}
 

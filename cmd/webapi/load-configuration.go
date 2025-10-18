@@ -3,11 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/ardanlabs/conf"
-	"gopkg.in/yaml.v2"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/ardanlabs/conf"
+	"gopkg.in/yaml.v2"
 )
 
 // WebAPIConfiguration describes the web API configuration. This structure is automatically parsed by
@@ -64,6 +66,11 @@ func loadConfiguration() (WebAPIConfiguration, error) {
 			return cfg, fmt.Errorf("can't unmarshal config file: %w", err)
 		}
 		_ = fp.Close()
+	}
+
+	// If DB filename was left as default or empty, set it to a cross-platform temp directory.
+	if cfg.DB.Filename == "" || cfg.DB.Filename == "/tmp/decaf.db" {
+		cfg.DB.Filename = filepath.Join(os.TempDir(), "decaf.db")
 	}
 
 	return cfg, nil
