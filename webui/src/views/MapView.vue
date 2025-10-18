@@ -29,18 +29,43 @@
         <h3>Add a Place</h3>
         <div v-if="draft">
           <div class="row">
+            <label>Place ID (manual)</label>
+            <input
+              v-model.trim="draft.customId"
+              placeholder="e.g. cafe-001"
+              @input="enforceIdRules"
+            />
+            <div class="hint small muted">Only letters, numbers, - and _ (max 40)</div>
+          </div>
+
+          <div class="row">
             <label>Title</label>
             <input v-model.trim="draft.title" placeholder="e.g. Hidden courtyard" />
           </div>
+
           <div class="row">
             <label>Notes</label>
             <textarea v-model.trim="draft.notes" rows="3" placeholder="Why is this spot special?"></textarea>
           </div>
+
+          <div class="row">
+            <label>Photo (optional)</label>
+            <input type="file" accept="image/*" @change="onPickPhoto" />
+            <div v-if="draft.photoDataUrl" class="thumb">
+              <img :src="draft.photoDataUrl" alt="Preview" />
+              <button class="ghost tiny" @click="draft.photoDataUrl = ''">Remove</button>
+            </div>
+            <div class="hint small muted">
+              Images are locally stored (downscaled for size). No upload to server yet.
+            </div>
+          </div>
+
           <div class="meta">
             <span>Lat: {{ draft.lat.toFixed(5) }}</span>
             <span>Lng: {{ draft.lng.toFixed(5) }}</span>
           </div>
-          <button class="cta" @click="saveDraft">Save (local)</button>
+
+          <button class="cta" :disabled="!canSave" @click="saveDraft">Save (local)</button>
         </div>
         <div v-else class="muted">Use the ＋ button to add at map center.</div>
       </section>
@@ -56,8 +81,9 @@
             <div class="dot"></div>
             <div class="txt">
               <div class="t">{{ p.title || 'Untitled place' }}</div>
-              <div class="s">({{ p.lat.toFixed(5) }}, {{ p.lng.toFixed(5) }})</div>
+              <div class="s">ID: {{ p.customId || '—' }} • {{ p.lat.toFixed(5) }}, {{ p.lng.toFixed(5) }}</div>
             </div>
+            <img v-if="p.photoDataUrl" class="li-thumb" :src="p.photoDataUrl" alt="" />
           </li>
         </ul>
       </div>
@@ -73,7 +99,13 @@
       </div>
 
       <section class="qr-tests">
-        <button class="wide" @click="$router.push({ name: 'qr-create' })">Create QR (latest place)</button>
+        <button
+          class="wide"
+          :disabled="!latestPlace"
+          @click="$router.push({ name: 'qr-create', query: { id: latestPlace?.customId || latestPlace?.id } })"
+        >
+          Create QR (latest place)
+        </button>
         <button class="wide ghost" @click="$router.push({ name: 'qr-scan' })">Scan QR</button>
       </section>
     </aside>
@@ -84,7 +116,7 @@
 import { onMounted, onBeforeUnmount, ref, computed, nextTick, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useAuth } from '@/composables/useAuth' // uses same composable as App.vue
+import { useAuth } from '@/composables/useAuth'
 
 // Fix Leaflet default png icons (only for the temporary draggable draft marker)
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
@@ -107,7 +139,6 @@ const panelOpen = ref(true)
 function togglePanel() { panelOpen.value = !panelOpen.value }
 
 // After the slide transition, invalidate map size to avoid tile gaps.
-// 260ms matches CSS transition (250ms) + a tiny buffer.
 watch(panelOpen, async () => {
   await nextTick()
   setTimeout(() => {
@@ -136,12 +167,10 @@ const userBase = computed(() => {
 // -------------------------------------------------------------
 
 function resetView() {
-  // Instant reset to user's geocoded home if we have it:
   if (userHomeCoords.value) {
     map.setView(userHomeCoords.value, Math.max(DEFAULT.zoom, 12))
     return
   }
-  // Otherwise, try to center to user's base (async geocode). Fallback to DEFAULT.
   if (userBase.value) {
     centerOnUserBase() // fire-and-forget
   } else {
@@ -154,7 +183,15 @@ function addAtCenter() {
   if (centerMarker) map.removeLayer(centerMarker)
   centerMarker = L.marker(c, { draggable: true }).addTo(map)
 
-  draft.value = { id: crypto.randomUUID(), lat: c.lat, lng: c.lng, title: '', notes: '' }
+  draft.value = {
+    id: crypto.randomUUID(),            // internal uid (always present)
+    customId: '',                       // your manual ID for QR
+    lat: c.lat,
+    lng: c.lng,
+    title: '',
+    notes: '',
+    photoDataUrl: ''                    // data URL (downscaled) for preview & popup
+  }
 
   centerMarker.on('drag', (ev) => {
     draft.value.lat = ev.latlng.lat
@@ -162,9 +199,20 @@ function addAtCenter() {
   })
 }
 
-function saveDraft() {
+const canSave = computed(() => {
+  if (!draft.value) return false
+  // title optional, notes optional
+  // customId optional (you said you'll assign it manually; allow blank)
+  return !!draft.value
+})
+
+async function saveDraft() {
   if (!draft.value) return
   const place = { ...draft.value }
+
+  // If you want to enforce customId presence, uncomment:
+  // if (!place.customId) { alert('Please set a manual ID'); return }
+
   allPlaces.value.unshift(place)
   persistLocal()
   addMarkerForPlaceIfVisible(place)
@@ -199,6 +247,7 @@ const visiblePlaces = computed(() => {
   const b = bounds.value
   return allPlaces.value.filter(p => b.contains([p.lat, p.lng]))
 })
+const latestPlace = computed(() => allPlaces.value[0] || null)
 
 // ---------- Geocoding: city+country -> center map & add "home" pin ----------
 function getCacheKey(city, country) {
@@ -288,10 +337,27 @@ function createRedDivIcon() {
   })
 }
 
+function popupHtmlForPlace(place) {
+  const title = escapeHTML(place.title || 'Untitled place')
+  const notes = escapeHTML(place.notes || '')
+  const idLine = place.customId ? `<div class="ph-sub">ID: <code>${escapeHTML(place.customId)}</code></div>` : ''
+  const img = place.photoDataUrl
+    ? `<div class="ph-img"><img src="${place.photoDataUrl}" alt="${title}" /></div>`
+    : ''
+  return `
+    <div class="ph">
+      ${img}
+      <div class="ph-title">${title}</div>
+      ${idLine}
+      ${notes ? `<div class="ph-notes">${notes}</div>` : ''}
+    </div>
+  `
+}
+
 function addMarkerForPlace(place) {
   const m = L.marker([place.lat, place.lng], { icon: createRedDivIcon() })
     .bindTooltip(place.title || 'Untitled place')
-    .bindPopup(`<strong>${escapeHTML(place.title || 'Untitled place')}</strong><br>${escapeHTML(place.notes || '')}`)
+    .bindPopup(popupHtmlForPlace(place), { maxWidth: 280, minWidth: 200 })
   m._placeId = place.id
   m.addTo(markersLayer)
 }
@@ -326,7 +392,7 @@ function updateViewState() {
 const debouncedUpdate = debounce(updateViewState, 120)
 
 // Local storage persistence
-const LS_KEY = 'places.v1'
+const LS_KEY = 'places.v2' // bumped version since we now store photos
 function persistLocal() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(allPlaces.value)) } catch {}
 }
@@ -338,6 +404,51 @@ function loadLocal() {
       if (Array.isArray(arr)) allPlaces.value = arr
     }
   } catch {}
+}
+
+// Photo helpers
+function enforceIdRules() {
+  if (!draft.value) return
+  draft.value.customId = (draft.value.customId || '')
+    .replace(/[^a-zA-Z0-9\-_]/g, '')
+    .slice(0, 40)
+}
+async function onPickPhoto(e) {
+  if (!draft.value) return
+  const file = e.target.files?.[0]
+  if (!file) return
+  try {
+    const dataUrl = await imageFileToResizedDataURL(file, 1024, 1024, 0.82) // keep it light for localStorage
+    draft.value.photoDataUrl = dataUrl
+  } catch (err) {
+    console.warn('Failed to load image', err)
+    alert('Could not read that image.')
+  }
+}
+function imageFileToResizedDataURL(file, maxW, maxH, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('read error'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const { width, height } = img
+        const scale = Math.min(1, maxW / width, maxH / height)
+        const w = Math.round(width * scale)
+        const h = Math.round(height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, w, h)
+        const out = canvas.toDataURL('image/jpeg', quality)
+        resolve(out)
+      }
+      img.onerror = () => reject(new Error('img error'))
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  })
 }
 
 function escapeHTML(s) {
@@ -470,14 +581,24 @@ input, textarea {
   color: #fff;
 }
 textarea { resize: vertical; min-height: 88px; }
+.hint { margin-top: -4px; }
 
-.meta { display: flex; gap: 12px; font-size: 12px; opacity: .7; margin-bottom: 10px; }
+/* Photo thumb */
+.thumb { display: grid; gap: 6px; }
+.thumb img {
+  width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* Buttons */
 .cta {
   width: 100%;
   display: grid; place-items: center;
   background: linear-gradient(135deg, #ffd36a, #ff8e6e);
   color: #0c0f1a; font-weight: 800; border: 0; border-radius: 12px; padding: 12px; cursor: pointer;
 }
+button.ghost { background: transparent; border: 1px solid rgba(255,255,255,.2); color: #cfe6ff; border-radius: 10px; padding: 8px 10px; }
+button.tiny { font-size: 12px; padding: 6px 8px; }
 
 /* Dividers with consistent spacing */
 hr {
@@ -490,7 +611,7 @@ hr {
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .list li {
   display: grid;
-  grid-template-columns: 12px 1fr;
+  grid-template-columns: 12px 1fr max-content;
   gap: 10px; align-items: center;
   padding: 8px; border-radius: 10px; cursor: pointer;
   background: rgba(255,255,255,.04);
@@ -500,6 +621,7 @@ hr {
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #8bd0ff; }
 .txt .t { font-weight: 700; }
 .txt .s { font-size: 12px; opacity: .65; }
+.li-thumb { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,.1); }
 .muted { opacity: .7; }
 
 /* Tools pinned at bottom of sidebar */
@@ -551,7 +673,16 @@ hr {
 </style>
 
 <style>
-/* Global (unscoped) — Leaflet pins only, namespaced to avoid conflicts elsewhere */
+/* Global (unscoped) — Leaflet popup content */
+.leaflet-popup-content .ph { display: grid; gap: 6px; }
+.leaflet-popup-content .ph-img img {
+  width: 100%; height: auto; border-radius: 8px; display: block;
+}
+.leaflet-popup-content .ph-title { font-weight: 800; }
+.leaflet-popup-content .ph-sub { font-size: 12px; opacity: .8; }
+.leaflet-popup-content .ph-notes { white-space: pre-wrap; }
+
+/* Global (unscoped) — Leaflet pins only, namespaced to avoid conflicts */
 
 /* Red pin for saved places */
 .pin-red { position: relative; }
