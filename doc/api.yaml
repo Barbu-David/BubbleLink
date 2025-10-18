@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: BubbleLink
   description: API BUBBLELINK
-  version: "1.01"
+  version: "1.02"
   
 tags:
 - name: login
@@ -36,6 +36,53 @@ paths:
                 $ref: '#/components/schemas/UserId'
         '400':
           description: Invalid input or parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+  /users/{id}/existence:
+    parameters:
+     - name: id
+       in: path
+       required: true  
+       description: The unique identifier for a user.
+       schema:
+        $ref: '#/components/schemas/UserId'
+    get:
+      tags: ["user info"]
+      summary: Get a use
+      description: Check if a user exists
+      operationId: getExistence
+      security:
+        - PrettyGoodSecurity: []
+      responses:
+        '200':
+          description: The users status
+          content:
+            application/json:
+              schema:
+                type: boolean
+                example: true
+        '400':
+          description: Invalid input or parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '404':
+          description: User not found.
           content:
             application/json:
               schema:
