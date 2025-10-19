@@ -1,9 +1,16 @@
 # BubbleLink
 Scaneaza coduri QR de la diverse atractii turistice/ momumente din orasul tau dar nu numai. Imparataseste ti experienta cu altii utilizatori si ajuta i si pe altii sa descopere noul lor loc favorit.
 
-## Instructiuni de instalare
+##**Aplicatia foloseste urmatoarele tehnologii**:
+- **Project Strucure** : Fantastic Coffee
+- **Database**: SQLite
+- **Backend**: GO
+- **API**: OpenAPI with swagger documentation
+- **Frontend**: Vue JS
+- **Containerization** : Docker 
+- **Compatibility**: Premade docker scripts for both Linux and Windows
 
-Aplicatia foloseste urmatoarele tehnologii: go, vuejs, html5-qrcode, leafletjs, docker.
+## Instructiuni de instalare
 
 ### Instalare Go
 
